@@ -1,0 +1,31 @@
+# Virtual Environment
+myenv/
+venv/
+.env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Model files
+*.pkl
+*.joblib
+
+# Data
+# Uncomment if your dataset should NOT be uploaded
+# dataset/*.csv
+
+# Streamlit
+.streamlit/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
