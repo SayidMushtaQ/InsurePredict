@@ -11,9 +11,6 @@ __pycache__/
 # Jupyter Notebook
 .ipynb_checkpoints/
 
-# Model files
-*.pkl
-*.joblib
 
 # Data
 # Uncomment if your dataset should NOT be uploaded
