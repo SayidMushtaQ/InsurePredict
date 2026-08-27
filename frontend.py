@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL = "http://localhost:8000/predict"
+API_URL = "https://insurepredict-jyjj.onrender.com/predict"
 
 
 # -----------------------------
@@ -147,7 +147,7 @@ if st.button("🔮 Predict Premium Category", use_container_width=True):
         st.error(
             "❌ Could not connect to the FastAPI server.\n\n"
             "Make sure your FastAPI server is running on "
-            "http://localhost:8000"
+            "https://insurepredict-jyjj.onrender.com"
         )
 
     # -----------------------------
