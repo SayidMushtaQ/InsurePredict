@@ -30,7 +30,7 @@ st.markdown(
 # -----------------------------
 # How to Run / Instructions
 # -----------------------------
-with st.expander("⚙️ How to Use This Application", expanded=True):
+with st.expander("⚙️ How to Use This Application", expanded=False):
 
     st.markdown("""
     ### 🚀 Application Instructions
