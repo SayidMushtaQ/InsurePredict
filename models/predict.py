@@ -8,9 +8,27 @@ with open('./models/model.pkl','rb') as f:
     model = pickle.load(f)
     
 
+# Get class labels from model 
+class_labels = model.classes_.tolist()
+print(class_labels)
+
+
 def predict_output(user_input:dict):
-    input_df = pd.DataFrame([user_input])
+    df = pd.DataFrame([user_input])
     
-    output = model.predict(input_df)[0]
+    # Predict the class 
+    predcted_class = model.predict(df)[0]
     
-    return output
+    # Get probabilities for all classes 
+    probabilities = model.predict_proba(df)[0]
+    confidence = max(probabilities)
+    
+    # Creae mapping: {class_name: probability}
+    
+    class_probs = dict(zip(class_labels,map(lambda p: round(p,4),probabilities)))
+    
+    return {
+        'predicted_category':predcted_class, 
+        'confidence':round(confidence,4), 
+        'class_probabilities':class_probs
+    }

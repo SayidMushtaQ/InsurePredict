@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from schema.user_input import UserInput
 from models.predict import model,MODEL_VERSION,predict_output
+from schema.predection_response import PredictionResponse
+
+
 
 app = FastAPI()
 
@@ -22,7 +25,7 @@ def health_check():
         }
 
 
-@app.post('/predict')
+@app.post('/predict',response_model=PredictionResponse)
 def predict_insurance_premium(data:UserInput):
     input_df = {
         'bmi':data.bmi,	
@@ -33,9 +36,13 @@ def predict_insurance_premium(data:UserInput):
         'occupation':data.occupation
     }
     
-    predction = predict_output(input_df)
+    try:
+        
+        predction = predict_output(input_df)
     
-    return JSONResponse(status_code=200,content={
-        'Message':'Model predict insurance successfully!!⭐', 
-        'predicted_category':predction
-    })
+        return JSONResponse(status_code=200,content={
+            'Message':'Model predict insurance successfully!!⭐', 
+            'response':predction
+        })
+    except Exception as e: 
+        return JSONResponse(status_code=500,content=str(e))
