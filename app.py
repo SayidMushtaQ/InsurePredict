@@ -3,7 +3,7 @@ import pickle
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel,Field,computed_field
+from pydantic import BaseModel,Field,computed_field,field_validator
 from typing import Literal,Annotated
 
 
@@ -14,7 +14,8 @@ app = FastAPI()
 with open('./models/model.pkl','rb') as f:
     model = pickle.load(f)
     
-    
+
+MODEL_VERSION = '1.0.0'
     
     
 tier_1_cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune"]
@@ -40,7 +41,12 @@ class UserInput(BaseModel):
     @property
     def bmi(self) -> float:
        return self.weight/(self.height ** 2)
-   
+    
+    @field_validator('city')
+    @classmethod 
+    def normalize_city(cls,v:str) -> str: 
+        v = v.strip().title()
+        return v
    
     @computed_field 
     @property 
@@ -75,7 +81,22 @@ class UserInput(BaseModel):
         
         
         
+
+@app.get('/') # For the human
+def home():
+    return { 
+            'Message':'Insurance premium prediciton API'
+        }
         
+@app.get('/health') # For the machine (such as: AWS etc . . .)
+def health_check(): 
+    return { 
+            'status':'OK!!', 
+            'code':'200', 
+            'version':MODEL_VERSION, 
+            'mode_loaded': model is not None
+        }
+
 
 @app.post('/predict')
 def predict_insurance_premium(data:UserInput):
