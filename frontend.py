@@ -1,8 +1,8 @@
 import streamlit as st
 import requests
 
-API_URL = "https://insurepredict-jyjj.onrender.com/predict"
-BACKEND_URL = "https://insurepredict-jyjj.onrender.com"
+API_URL = "http://54.234.31.162:8000/predict"
+BACKEND_URL = "http://54.234.31.162:8000/"
 FRONTEND_URL = "https://insurepredictgit-fh3zws7yhtpz4qtaxxrmbl.streamlit.app/"
 
 
