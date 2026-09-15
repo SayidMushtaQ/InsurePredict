@@ -39,10 +39,8 @@ def predict_insurance_premium(data:UserInput):
     try:
         
         predction = predict_output(input_df)
+        return predction
     
-        return JSONResponse(status_code=200,content={
-            'Message':'Model predict insurance successfully!!⭐', 
-            'response':predction
-        })
+    
     except Exception as e: 
         return JSONResponse(status_code=500,content=str(e))
