@@ -31,7 +31,7 @@ st.title("💰 Insurance Premium Category Predictor")
 st.markdown(
     """
     Enter your personal, financial, lifestyle, and demographic
-    information to predict your insurance premium category.
+    details below to predict your insurance premium category.
     """
 )
 
@@ -51,7 +51,7 @@ with st.expander("⚙️ How to Use This Application", expanded=False):
 
         ### Step 1 — Backend
 
-        The prediction API is hosted on AWS.
+        The FastAPI prediction API is deployed on AWS.
 
         **Backend:**
 
@@ -59,7 +59,7 @@ with st.expander("⚙️ How to Use This Application", expanded=False):
 
         ### Step 2 — Enter Your Details
 
-        Provide:
+        Provide the following information:
 
         - Age
         - Weight
@@ -69,7 +69,7 @@ with st.expander("⚙️ How to Use This Application", expanded=False):
         - City Tier
         - Occupation
 
-        BMI and age group are calculated automatically.
+        **BMI** and **Age Group** are calculated automatically.
 
         ### Step 3 — Get Your Prediction
 
@@ -77,15 +77,14 @@ with st.expander("⚙️ How to Use This Application", expanded=False):
 
         **🔮 Predict Premium Category**
 
-        The Streamlit application sends your information to the
+        The Streamlit application sends the information to the
         FastAPI backend.
 
-        The backend processes the data using the trained ML model
-        and returns:
+        The Machine Learning model returns:
 
         - Predicted premium category
-        - Confidence score
-        - Probability for each category
+        - Model confidence
+        - Probability for each class
 
         ### ⚠️ Important
 
@@ -110,15 +109,37 @@ st.caption(
 
 
 # ============================================================
+# AGE GROUP FUNCTION
+# ============================================================
+
+def get_age_group(age):
+
+    if age < 18:
+        return "young"
+
+    elif age < 30:
+        return "young_adult"
+
+    elif age < 45:
+        return "adult"
+
+    elif age < 60:
+        return "middle_aged"
+
+    else:
+        return "senior"
+
+
+# ============================================================
 # USER INFORMATION
 # ============================================================
 
 st.subheader("📝 Enter Your Information")
 
 
-# ------------------------------------------------------------
-# Age
-# ------------------------------------------------------------
+# ============================================================
+# AGE
+# ============================================================
 
 age = st.number_input(
     "Age",
@@ -129,26 +150,15 @@ age = st.number_input(
 )
 
 
-# ------------------------------------------------------------
-# Automatically calculate age group
-# ------------------------------------------------------------
-
-def get_age_group(age):
-    if age < 18:
-        return "young"
-    elif age < 30:
-        return "young_adult"
-    elif age < 45:
-        return "adult"
-    elif age < 60:
-        return "middle_aged"
-    else:
-        return "senior"
-
+# ============================================================
+# AGE GROUP
+# ============================================================
 
 age_group = get_age_group(age)
 
-st.caption(f"👤 Age Group: **{age_group}**")
+st.caption(
+    f"👤 Age Group: **{age_group}**"
+)
 
 
 # ============================================================
@@ -180,11 +190,12 @@ with col2:
     )
 
 
-# ------------------------------------------------------------
-# BMI Calculation
-# ------------------------------------------------------------
+# ============================================================
+# BMI CALCULATION
+# ============================================================
 
 bmi = weight / (height ** 2)
+
 
 st.metric(
     label="⚖️ Calculated BMI",
@@ -252,10 +263,10 @@ occupation = st.selectbox(
 
 
 # ============================================================
-# SHOW INPUT SUMMARY
+# INPUT PREVIEW
 # ============================================================
 
-with st.expander("📋 View Calculated Input Data"):
+with st.expander("📋 View Input Data", expanded=False):
 
     input_preview = {
         "bmi": round(bmi, 2),
@@ -278,9 +289,9 @@ if st.button(
     use_container_width=True
 ):
 
-    # --------------------------------------------------------
-    # Data sent to FastAPI
-    # --------------------------------------------------------
+    # ========================================================
+    # DATA SENT TO FASTAPI
+    # ========================================================
 
     input_data = {
         "bmi": round(bmi, 2),
@@ -292,9 +303,9 @@ if st.button(
     }
 
 
-    # --------------------------------------------------------
-    # API Request
-    # --------------------------------------------------------
+    # ========================================================
+    # API REQUEST
+    # ========================================================
 
     with st.spinner(
         "🔄 Connecting to the prediction server..."
@@ -309,9 +320,9 @@ if st.button(
             )
 
 
-            # ------------------------------------------------
-            # Convert response to JSON
-            # ------------------------------------------------
+            # ====================================================
+            # PARSE JSON
+            # ====================================================
 
             try:
 
@@ -322,23 +333,26 @@ if st.button(
                 result = None
 
 
-            # =================================================
+            # ====================================================
             # SUCCESS
-            # =================================================
+            # ====================================================
 
             if response.status_code == 200:
 
                 if result is None:
 
                     st.error(
-                        "❌ The API returned an invalid response."
+                        "❌ The FastAPI server returned an invalid "
+                        "JSON response."
                     )
+
+                    st.code(response.text)
 
                 else:
 
-                    # ----------------------------------------
-                    # Extract prediction
-                    # ----------------------------------------
+                    # ============================================
+                    # HANDLE NEW API RESPONSE
+                    # ============================================
 
                     prediction = result.get(
                         "predicted_category"
@@ -354,94 +368,172 @@ if st.button(
                     )
 
 
-                    # ----------------------------------------
-                    # Prediction Result
-                    # ----------------------------------------
+                    # ============================================
+                    # HANDLE OLD/NESTED RESPONSE
+                    #
+                    # This protects the frontend if the AWS
+                    # backend is still running an older version.
+                    # ============================================
 
-                    st.success(
-                        f"🎯 Predicted Insurance Premium Category: "
-                        f"**{prediction}**"
-                    )
+                    if (
+                        prediction is None
+                        and isinstance(result.get("response"), dict)
+                    ):
 
+                        prediction_result = result["response"]
 
-                    # ----------------------------------------
-                    # Confidence
-                    # ----------------------------------------
+                        prediction = prediction_result.get(
+                            "predicted_category"
+                        )
 
-                    if confidence is not None:
+                        confidence = prediction_result.get(
+                            "confidence"
+                        )
 
-                        st.metric(
-                            "🎯 Model Confidence",
-                            f"{confidence * 100:.2f}%"
+                        class_probabilities = (
+                            prediction_result.get(
+                                "class_probabilities",
+                                {}
+                            )
                         )
 
 
-                    # ----------------------------------------
-                    # Probability Distribution
-                    # ----------------------------------------
+                    # ============================================
+                    # CHECK RESPONSE
+                    # ============================================
 
-                    if class_probabilities:
+                    if prediction is None:
 
-                        st.subheader(
-                            "📊 Class Probabilities"
+                        st.error(
+                            "❌ Prediction was not found in the API "
+                            "response."
                         )
 
-                        # Convert probabilities to percentages
-
-                        probability_data = {
-                            category: probability * 100
-                            for category, probability
-                            in class_probabilities.items()
-                        }
-
-                        st.bar_chart(
-                            probability_data
+                        st.warning(
+                            "The API responded successfully, but the "
+                            "response format is different from expected."
                         )
 
-
-                        # Show exact values
-
-                        for category, probability in (
-                            class_probabilities.items()
+                        with st.expander(
+                            "🔍 View Raw API Response",
+                            expanded=True
                         ):
 
+                            st.json(result)
+
+
+                    else:
+
+                        # ========================================
+                        # PREDICTION RESULT
+                        # ========================================
+
+                        st.success(
+                            f"🎯 Predicted Insurance Premium Category: "
+                            f"**{prediction}**"
+                        )
+
+
+                        # ========================================
+                        # CONFIDENCE
+                        # ========================================
+
+                        if confidence is not None:
+
+                            st.subheader(
+                                "🎯 Prediction Confidence"
+                            )
+
+                            st.progress(
+                                float(confidence)
+                            )
+
                             st.write(
-                                f"**{category}:** "
-                                f"{probability * 100:.2f}%"
+                                f"Model confidence: "
+                                f"**{confidence * 100:.2f}%**"
                             )
 
 
-                    # ----------------------------------------
-                    # Input Data
-                    # ----------------------------------------
+                        # ========================================
+                        # CLASS PROBABILITIES
+                        # ========================================
 
-                    with st.expander(
-                        "📋 View Submitted Input"
-                    ):
+                        if class_probabilities:
 
-                        st.json(input_data)
-
-
-                    # ----------------------------------------
-                    # API Response
-                    # ----------------------------------------
-
-                    with st.expander(
-                        "🔍 View API Response"
-                    ):
-
-                        st.json(result)
+                            st.subheader(
+                                "📊 Class Probabilities"
+                            )
 
 
-            # =================================================
+                            # ------------------------------------
+                            # Convert to percentage
+                            # ------------------------------------
+
+                            probability_data = {
+                                category: probability * 100
+                                for category, probability
+                                in class_probabilities.items()
+                            }
+
+
+                            # ------------------------------------
+                            # Chart
+                            # ------------------------------------
+
+                            st.bar_chart(
+                                probability_data
+                            )
+
+
+                            # ------------------------------------
+                            # Exact values
+                            # ------------------------------------
+
+                            for (
+                                category,
+                                probability
+                            ) in class_probabilities.items():
+
+                                st.write(
+                                    f"**{category}:** "
+                                    f"{probability * 100:.2f}%"
+                                )
+
+
+                        # ========================================
+                        # SUBMITTED DATA
+                        # ========================================
+
+                        with st.expander(
+                            "📋 View Submitted Input",
+                            expanded=False
+                        ):
+
+                            st.json(input_data)
+
+
+                        # ========================================
+                        # RAW API RESPONSE
+                        # ========================================
+
+                        with st.expander(
+                            "🔍 View API Response",
+                            expanded=False
+                        ):
+
+                            st.json(result)
+
+
+            # ====================================================
             # API ERROR
-            # =================================================
+            # ====================================================
 
             else:
 
                 st.error(
                     f"❌ API Error: {response.status_code}"
                 )
+
 
                 if result:
 
@@ -452,9 +544,9 @@ if st.button(
                     st.code(response.text)
 
 
-        # =====================================================
+        # ========================================================
         # CONNECTION ERROR
-        # =====================================================
+        # ========================================================
 
         except requests.exceptions.ConnectionError:
 
@@ -463,7 +555,7 @@ if st.button(
             )
 
             st.warning(
-                "Please make sure the FastAPI backend is "
+                "Please make sure your AWS FastAPI server is "
                 "running and accessible."
             )
 
@@ -471,18 +563,10 @@ if st.button(
                 BACKEND_URL
             )
 
-            st.markdown(
-                """
-                👉 Try opening the backend URL first.
-                If the server is starting up, wait a few seconds
-                and try the prediction again.
-                """
-            )
 
-
-        # =====================================================
+        # ========================================================
         # TIMEOUT ERROR
-        # =====================================================
+        # ========================================================
 
         except requests.exceptions.Timeout:
 
@@ -496,9 +580,9 @@ if st.button(
             )
 
 
-        # =====================================================
+        # ========================================================
         # OTHER REQUEST ERROR
-        # =====================================================
+        # ========================================================
 
         except requests.exceptions.RequestException as e:
 
